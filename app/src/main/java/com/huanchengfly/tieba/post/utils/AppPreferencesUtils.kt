@@ -115,6 +115,8 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
 
     var hideForumIntroAndStat by DataStoreDelegates.boolean(defaultValue = false)
 
+    var hideMedia by DataStoreDelegates.boolean(defaultValue = false)
+
     var hideReply by DataStoreDelegates.boolean(defaultValue = false)
 
     var homePageScroll by DataStoreDelegates.boolean(defaultValue = false)
@@ -127,6 +129,8 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
     )
 
     var imeHeight by DataStoreDelegates.int(defaultValue = 800)
+
+    var liftUpBottomBar by DataStoreDelegates.boolean(defaultValue = true)
 
     var listItemsBackgroundIntermixed by DataStoreDelegates.boolean(defaultValue = true)
 
