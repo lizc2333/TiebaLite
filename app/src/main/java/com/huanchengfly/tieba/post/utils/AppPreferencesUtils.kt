@@ -77,6 +77,11 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
         key = "collect_thread_see_lz"
     )
 
+    var collectThreadDescSort by DataStoreDelegates.boolean(
+        defaultValue = false,
+        key = "collect_thread_desc_sort"
+    )
+
     var customPrimaryColor by DataStoreDelegates.string(key = "custom_primary_color")
 
     var customStatusBarFontDark by DataStoreDelegates.boolean(
@@ -96,7 +101,7 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
 
     var darkTheme by DataStoreDelegates.string(key = "dark_theme", defaultValue = "grey_dark")
 
-    var enableNewUi by DataStoreDelegates.boolean(defaultValue = false)
+    var doNotUsePhotoPicker by DataStoreDelegates.boolean(defaultValue = false)
 
     var useDynamicColorTheme by DataStoreDelegates.boolean(defaultValue = false)
 
@@ -120,6 +125,8 @@ open class AppPreferencesUtils private constructor(ctx: Context) {
     var hideReply by DataStoreDelegates.boolean(defaultValue = false)
 
     var homePageScroll by DataStoreDelegates.boolean(defaultValue = false)
+
+    var homePageShowHistoryForum by DataStoreDelegates.boolean(defaultValue = true)
 
     var imageDarkenWhenNightMode by DataStoreDelegates.boolean(defaultValue = true)
 

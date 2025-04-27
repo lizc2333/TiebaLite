@@ -40,7 +40,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.huanchengfly.tieba.post.R
-import com.huanchengfly.tieba.post.activities.UserActivity
 import com.huanchengfly.tieba.post.api.models.ThreadStoreBean
 import com.huanchengfly.tieba.post.arch.collectPartialAsState
 import com.huanchengfly.tieba.post.arch.onEvent
@@ -50,8 +49,10 @@ import com.huanchengfly.tieba.post.pxToSp
 import com.huanchengfly.tieba.post.ui.common.theme.compose.ExtendedTheme
 import com.huanchengfly.tieba.post.ui.common.theme.compose.pullRefreshIndicator
 import com.huanchengfly.tieba.post.ui.page.destinations.ThreadPageDestination
+import com.huanchengfly.tieba.post.ui.page.destinations.UserProfilePageDestination
 import com.huanchengfly.tieba.post.ui.page.thread.ThreadPageFrom
 import com.huanchengfly.tieba.post.ui.page.thread.ThreadPageFromStoreExtra
+import com.huanchengfly.tieba.post.ui.page.thread.ThreadSortType
 import com.huanchengfly.tieba.post.ui.widgets.compose.Avatar
 import com.huanchengfly.tieba.post.ui.widgets.compose.BackNavigationIcon
 import com.huanchengfly.tieba.post.ui.widgets.compose.ErrorScreen
@@ -148,7 +149,9 @@ fun ThreadStorePage(
             isEmpty = data.isEmpty(),
             isError = isError,
             isLoading = isRefreshing,
-            modifier = Modifier.padding(contentPaddings),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPaddings),
             onReload = {
                 viewModel.send(ThreadStoreUiIntent.Refresh)
             },
@@ -182,11 +185,7 @@ fun ThreadStorePage(
                                 info = info,
                                 onUserClick = {
                                     info.author.lzUid?.let {
-                                        UserActivity.launch(
-                                            context,
-                                            it,
-                                            StringUtil.getAvatarUrl(info.author.userPortrait)
-                                        )
+                                        navigator.navigate(UserProfilePageDestination(it.toLong()))
                                     }
                                 },
                                 onClick = {
@@ -195,6 +194,7 @@ fun ThreadStorePage(
                                             threadId = info.threadId.toLong(),
                                             postId = info.markPid.toLong(),
                                             seeLz = context.appPreferences.collectThreadSeeLz,
+                                            sortType = if(context.appPreferences.collectThreadDescSort) ThreadSortType.SORT_TYPE_DESC else ThreadSortType.SORT_TYPE_DEFAULT,
                                             from = ThreadPageFrom.FROM_STORE,
                                             extra = ThreadPageFromStoreExtra(
                                                 maxPid = info.maxPid.toLong(),

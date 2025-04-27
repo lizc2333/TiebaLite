@@ -6,15 +6,18 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BrandingWatermark
+import androidx.compose.material.icons.automirrored.outlined.BrandingWatermark
+import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.outlined.CalendarViewDay
-import androidx.compose.material.icons.outlined.ExitToApp
+import androidx.compose.material.icons.outlined.ImageSearch
 import androidx.compose.material.icons.outlined.NightsStay
 import androidx.compose.material.icons.outlined.PhotoSizeSelectActual
 import androidx.compose.material.icons.outlined.SecurityUpdateWarning
 import androidx.compose.material.icons.outlined.SpeakerNotesOff
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material.icons.outlined.WatchLater
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -36,6 +39,7 @@ import com.huanchengfly.tieba.post.ui.widgets.compose.BackNavigationIcon
 import com.huanchengfly.tieba.post.ui.widgets.compose.MyScaffold
 import com.huanchengfly.tieba.post.ui.widgets.compose.Sizes
 import com.huanchengfly.tieba.post.ui.widgets.compose.TitleCentredToolbar
+import com.huanchengfly.tieba.post.utils.isPhotoPickerAvailable
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -45,6 +49,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 fun HabitSettingsPage(
     navigator: DestinationsNavigator
 ) {
+    val context = LocalContext.current
     MyScaffold(
         backgroundColor = Color.Transparent,
         topBar = {
@@ -105,7 +110,7 @@ fun HabitSettingsPage(
                     leadingIcon = {
                         LeadingIcon {
                             AvatarIcon(
-                                icon = Icons.Outlined.BrandingWatermark,
+                                icon = Icons.AutoMirrored.Outlined.BrandingWatermark,
                                 size = Sizes.Small,
                                 contentDescription = null,
                             )
@@ -118,16 +123,15 @@ fun HabitSettingsPage(
                     key = "imageDarkenWhenNightMode",
                     title = stringResource(id = R.string.settings_image_darken_when_night_mode),
                     defaultChecked = true,
-                    leadingIcon = {
-                        LeadingIcon {
-                            AvatarIcon(
-                                icon = Icons.Outlined.NightsStay,
-                                size = Sizes.Small,
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                )
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = Icons.Outlined.NightsStay,
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
+                    }
+                }
             }
             prefsItem {
                 ListPref(
@@ -158,7 +162,7 @@ fun HabitSettingsPage(
                     leadingIcon = {
                         LeadingIcon {
                             AvatarIcon(
-                                icon = Icons.Outlined.ExitToApp,
+                                icon = Icons.AutoMirrored.Outlined.ExitToApp,
                                 size = Sizes.Small,
                                 contentDescription = null,
                             )
@@ -168,7 +172,8 @@ fun HabitSettingsPage(
                     entries = mapOf(
                         "post" to stringResource(id = R.string.btn_post),
                         "refresh" to stringResource(id = R.string.btn_refresh),
-                        "back_to_top" to stringResource(id = R.string.btn_back_to_top)
+                        "back_to_top" to stringResource(id = R.string.btn_back_to_top),
+                        "hide" to stringResource(id = R.string.btn_hide)
                     )
                 )
             }
@@ -176,36 +181,35 @@ fun HabitSettingsPage(
                 SwitchPref(
                     key = "hideMedia",
                     title = stringResource(id = R.string.title_hide_media),
-                    defaultChecked = false,
-                    leadingIcon = {
-                        LeadingIcon {
-                            AvatarIcon(
-                                icon = ImageVector.vectorResource(R.drawable.ic_outline_collapse_all),
-                                size = Sizes.Small,
-                                contentDescription = null,
-                            )
-                        }
+                    defaultChecked = false
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = ImageVector.vectorResource(R.drawable.ic_outline_collapse_all),
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
                     }
-                )
+                }
             }
-            prefsItem {
-                SwitchPref(
-                    key = "showShortcutInThread",
-                    title = stringResource(id = R.string.settings_show_shortcut),
-                    defaultChecked = true,
-                    leadingIcon = {
-                        LeadingIcon {
-                            AvatarIcon(
-                                icon = ImageVector.vectorResource(id = R.drawable.ic_quick_yellow),
-                                size = Sizes.Small,
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                    summaryOn = stringResource(id = R.string.tip_show_shortcut_in_thread_on),
-                    summaryOff = stringResource(id = R.string.tip_show_shortcut_in_thread)
-                )
-            }
+//            prefsItem {
+//                SwitchPref(
+//                    key = "showShortcutInThread",
+//                    title = stringResource(id = R.string.settings_show_shortcut),
+//                    defaultChecked = true,
+//                    leadingIcon = {
+//                        LeadingIcon {
+//                            AvatarIcon(
+//                                icon = ImageVector.vectorResource(id = R.drawable.ic_quick_yellow),
+//                                size = Sizes.Small,
+//                                contentDescription = null,
+//                            )
+//                        }
+//                    },
+//                    summaryOn = stringResource(id = R.string.tip_show_shortcut_in_thread_on),
+//                    summaryOff = stringResource(id = R.string.tip_show_shortcut_in_thread)
+//                )
+//            }
             prefsItem {
                 SwitchPref(
                     key = "collect_thread_see_lz",
@@ -226,13 +230,46 @@ fun HabitSettingsPage(
             }
             prefsItem {
                 SwitchPref(
-                    key = "show_both_username_and_nickname",
-                    title = stringResource(id = R.string.title_show_both_username_and_nickname),
+                    key = "collect_thread_desc_sort",
+                    title = stringResource(id = R.string.settings_collect_thread_desc_sort),
                     defaultChecked = false,
                     leadingIcon = {
                         LeadingIcon {
                             AvatarIcon(
-                                icon = Icons.Outlined.Verified,
+                                icon = Icons.AutoMirrored.Rounded.Sort,
+                                size = Sizes.Small,
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                    summaryOn = stringResource(id = R.string.tip_collect_thread_desc_sort_on),
+                    summaryOff = stringResource(id = R.string.tip_collect_thread_desc_sort)
+                )
+            }
+            prefsItem {
+                SwitchPref(
+                    key = "show_both_username_and_nickname",
+                    title = stringResource(id = R.string.title_show_both_username_and_nickname),
+                    defaultChecked = false,
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = Icons.Outlined.Verified,
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
+                    }
+                }
+            }
+            prefsItem {
+                SwitchPref(
+                    key = "homePageShowHistoryForum",
+                    title = stringResource(id = R.string.settings_home_page_show_history_forum),
+                    defaultChecked = true,
+                    leadingIcon = {
+                        LeadingIcon {
+                            AvatarIcon(
+                                icon = Icons.Outlined.WatchLater,
                                 size = Sizes.Small,
                                 contentDescription = null,
                             )
@@ -245,31 +282,55 @@ fun HabitSettingsPage(
                     key = "postOrReplyWarning",
                     title = stringResource(id = R.string.title_post_or_reply_warning),
                     defaultChecked = true,
-                    leadingIcon = {
-                        LeadingIcon {
-                            AvatarIcon(
-                                icon = Icons.Outlined.SecurityUpdateWarning,
-                                size = Sizes.Small,
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                )
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = Icons.Outlined.SecurityUpdateWarning,
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
+                    }
+                }
             }
             prefsItem {
                 SwitchPref(
                     key = "hideReply",
                     title = stringResource(id = R.string.title_hide_reply),
                     defaultChecked = false,
+                ) {
+                    LeadingIcon {
+                        AvatarIcon(
+                            icon = Icons.Outlined.SpeakerNotesOff,
+                            size = Sizes.Small,
+                            contentDescription = null,
+                        )
+                    }
+                }
+            }
+            prefsItem {
+                SwitchPref(
+                    key = "doNotUsePhotoPicker",
+                    title = stringResource(id = R.string.title_do_not_use_photo_picker),
+                    summary = {
+                        if (!isPhotoPickerAvailable()) {
+                            context.getString(R.string.summary_photo_picker_not_supported)
+                        } else if (it) {
+                            context.getString(R.string.summary_do_not_use_photo_picker)
+                        } else {
+                            context.getString(R.string.summary_use_photo_picker)
+                        }
+                    },
+                    defaultChecked = false,
                     leadingIcon = {
                         LeadingIcon {
                             AvatarIcon(
-                                icon = Icons.Outlined.SpeakerNotesOff,
+                                icon = Icons.Outlined.ImageSearch,
                                 size = Sizes.Small,
                                 contentDescription = null,
                             )
                         }
                     },
+                    enabled = isPhotoPickerAvailable()
                 )
             }
         }

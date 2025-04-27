@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -18,12 +18,11 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomViewTarget
-import com.bumptech.glide.request.transition.Transition
+import com.github.panpf.sketch.fetch.newFileUri
+import com.github.panpf.sketch.request.DisplayRequest
+import com.github.panpf.sketch.request.DisplayResult
+import com.github.panpf.sketch.request.execute
+import com.github.panpf.sketch.resize.Scale
 import com.google.android.material.appbar.AppBarLayout
 import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.App.Companion.INSTANCE
@@ -39,9 +38,7 @@ import com.huanchengfly.tieba.post.putBoolean
 import com.huanchengfly.tieba.post.putString
 import com.huanchengfly.tieba.post.ui.common.theme.utils.ThemeUtils
 import com.huanchengfly.tieba.post.ui.widgets.theme.TintSwipeRefreshLayout
-import com.scwang.smart.refresh.header.MaterialHeader
-import com.scwang.smart.refresh.layout.SmartRefreshLayout
-import java.io.File
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 object ThemeUtil {
@@ -82,6 +79,9 @@ object ThemeUtil {
     const val TRANSLUCENT_THEME_LIGHT = 0
     const val TRANSLUCENT_THEME_DARK = 1
 
+    private val context: Context
+        get() = INSTANCE
+
     val dataStore: DataStore<Preferences>
         get() = INSTANCE.dataStore
 
@@ -115,7 +115,7 @@ object ThemeUtil {
 
     fun switchTheme(newTheme: String, recordOldTheme: Boolean = true) {
         if (recordOldTheme) {
-            val oldTheme = getTheme()
+            val oldTheme = getRawTheme()
             if (!isNightMode(oldTheme)) {
                 dataStore.putString(KEY_OLD_THEME, oldTheme)
             }
@@ -131,6 +131,10 @@ object ThemeUtil {
 
     fun setUseDynamicTheme(useDynamicTheme: Boolean) {
         dataStore.putBoolean(KEY_USE_DYNAMIC_THEME, useDynamicTheme)
+    }
+
+    fun isUsingDynamicTheme(): Boolean {
+        return context.appPreferences.useDynamicColorTheme
     }
 
     fun switchNightMode() {
@@ -188,45 +192,20 @@ object ThemeUtil {
     }
 
     @JvmStatic
-    fun setThemeForSmartRefreshLayout(smartRefreshLayout: SmartRefreshLayout) {
-        val context = smartRefreshLayout.context
-        val resources = context.resources
-        if (resources != null) {
-            smartRefreshLayout.setPrimaryColors(
-                ThemeUtils.getColorByAttr(
-                    context,
-                    R.attr.colorAccent
-                )
-            )
-        }
-    }
-
-    fun setThemeForMaterialHeader(materialHeader: MaterialHeader) {
-        val context = materialHeader.context
-        val resources = context.resources
-        if (resources != null) {
-            materialHeader.setProgressBackgroundColorSchemeColor(resources.getColor(R.color.color_swipe_refresh_bg))
-            materialHeader.setColorSchemeColors(
-                ThemeUtils.getColorByAttr(
-                    context,
-                    R.attr.colorAccent
-                )
-            )
-        }
-    }
-
-    @JvmStatic
     fun isNightMode(): Boolean {
-        return isNightMode(getTheme())
+        return isNightMode(getRawTheme())
     }
 
     @JvmStatic
     fun isNightMode(theme: String): Boolean {
-        return theme.lowercase(Locale.getDefault()).contains("dark")
+        return theme.lowercase(Locale.getDefault()).contains("dark") && !theme.contains(
+            THEME_TRANSLUCENT,
+            ignoreCase = true
+        )
     }
 
     fun isTranslucentTheme(): Boolean {
-        return isTranslucentTheme(getTheme())
+        return isTranslucentTheme(getRawTheme())
     }
 
     @JvmStatic
@@ -240,12 +219,15 @@ object ThemeUtil {
         )
     }
 
+    fun isDynamicTheme(theme: String): Boolean {
+        return theme.endsWith("_dynamic")
+    }
+
     fun isStatusBarFontDark(): Boolean {
-        val theme = getTheme()
-        val isToolbarPrimaryColor: Boolean =
-            dataStore.getBoolean(KEY_CUSTOM_TOOLBAR_PRIMARY_COLOR, false)
+        val theme = getRawTheme()
+        val isToolbarPrimaryColor: Boolean = INSTANCE.appPreferences.toolbarPrimaryColor
         return if (theme == THEME_CUSTOM) {
-            dataStore.getBoolean(KEY_CUSTOM_STATUS_BAR_FONT_DARK, false)
+            INSTANCE.appPreferences.customStatusBarFontDark
         } else if (isTranslucentTheme(theme)) {
             theme.contains("dark", ignoreCase = true)
         } else if (!isToolbarPrimaryColor) {
@@ -260,12 +242,15 @@ object ThemeUtil {
     }
 
     fun setTheme(context: Activity) {
-        val nowTheme = getThemeTranslucent()
+        val nowTheme = getCurrentTheme()
         context.setTheme(getThemeByName(nowTheme))
     }
 
     @JvmOverloads
-    fun getThemeTranslucent(theme: String = getTheme()): String {
+    fun getCurrentTheme(
+        theme: String = getRawTheme(),
+        checkDynamic: Boolean = false,
+    ): String {
         var nowTheme = theme
         if (isTranslucentTheme(nowTheme)) {
             val colorTheme =
@@ -275,6 +260,8 @@ object ThemeUtil {
             } else {
                 THEME_TRANSLUCENT_LIGHT
             }
+        } else if (checkDynamic && isUsingDynamicTheme() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            nowTheme = "${nowTheme}_dynamic"
         }
         return nowTheme
     }
@@ -333,10 +320,10 @@ object ThemeUtil {
     }
 
     fun setTranslucentThemeBackground(
+        activity: BaseActivity,
         view: View?,
-        setFitsSystemWindow: Boolean,
-        useCache: Boolean,
-        vararg transformations: BitmapTransformation
+        setFitsSystemWindow: Boolean = true,
+        useCache: Boolean = false,
     ) {
         if (view == null) {
             return
@@ -370,48 +357,24 @@ object ThemeUtil {
             return
         }
         if (useCache && translucentBackground != null &&
-            (translucentBackground !is BitmapDrawable
-                    || translucentBackground is BitmapDrawable &&
-                    !(translucentBackground as BitmapDrawable?)!!.bitmap.isRecycled) &&
-            (transformations.isEmpty())
+            (translucentBackground !is BitmapDrawable || !(translucentBackground as BitmapDrawable).bitmap.isRecycled)
         ) {
             view.background = translucentBackground
             return
         }
-        var bgOptions = RequestOptions.centerCropTransform()
-            .optionalFitCenter()
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-        if (transformations.isNotEmpty()) {
-            bgOptions = bgOptions.transform(*transformations)
+        activity.launch {
+            val result = DisplayRequest(activity, newFileUri(backgroundFilePath)) {
+                resizeScale(Scale.CENTER_CROP)
+            }.execute()
+            if (result is DisplayResult.Success) {
+                if (useCache) {
+                    translucentBackground = result.drawable
+                }
+                view.background = result.drawable
+            } else {
+                view.setBackgroundColor(Color.BLACK)
+            }
         }
-        Glide.with(INSTANCE)
-            .asDrawable()
-            .load(File(backgroundFilePath))
-            .apply(bgOptions)
-            .into(object : CustomViewTarget<View, Drawable>(view) {
-                override fun onLoadFailed(errorDrawable: Drawable?) {
-                    getView().setBackgroundColor(Color.BLACK)
-                }
-
-                override fun onResourceReady(
-                    resource: Drawable,
-                    transition: Transition<in Drawable>?
-                ) {
-                    if (useCache && (transformations == null || transformations.isEmpty())) {
-                        translucentBackground = resource
-                    }
-                    getView().background = resource
-                }
-
-                override fun onResourceCleared(placeholder: Drawable?) {
-                    getView().setBackgroundColor(Color.BLACK)
-                }
-            })
-    }
-
-    @JvmStatic
-    fun setTranslucentThemeBackground(view: View?) {
-        setTranslucentThemeBackground(view, true, false)
     }
 
     @StyleRes
@@ -433,7 +396,7 @@ object ThemeUtil {
     }
 
     @JvmStatic
-    fun getTheme(): String {
+    fun getRawTheme(): String {
         val theme = themeState.value
         return when (theme.lowercase(Locale.getDefault())) {
             THEME_TRANSLUCENT,
@@ -447,7 +410,8 @@ object ThemeUtil {
             THEME_RED,
             THEME_BLUE_DARK,
             THEME_GREY_DARK,
-            THEME_AMOLED_DARK -> theme.lowercase(Locale.getDefault())
+            THEME_AMOLED_DARK,
+            -> theme.lowercase(Locale.getDefault())
 
             else -> THEME_DEFAULT
         }

@@ -25,14 +25,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import butterknife.ButterKnife
-import cn.jzvd.Jzvd
 import com.gyf.immersionbar.ImmersionBar
 import com.huanchengfly.tieba.post.App
 import com.huanchengfly.tieba.post.App.Companion.INSTANCE
 import com.huanchengfly.tieba.post.R
-import com.huanchengfly.tieba.post.activities.MainActivity.Companion.SP_SHOULD_SHOW_SNACKBAR
-import com.huanchengfly.tieba.post.dataStore
-import com.huanchengfly.tieba.post.putBoolean
 import com.huanchengfly.tieba.post.ui.common.theme.interfaces.ExtraRefreshable
 import com.huanchengfly.tieba.post.ui.common.theme.utils.ThemeUtils
 import com.huanchengfly.tieba.post.ui.widgets.VoicePlayerView
@@ -57,8 +53,7 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
     private var mTintToolbar: TintToolbar? = null
     private var oldTheme: String = ""
 
-    var isActivityRunning = true
-        private set
+    private var isActivityRunning = true
     private var customStatusColor = -1
     private var statusBarTinted = false
 
@@ -67,7 +62,6 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
     override fun onPause() {
         super.onPause()
         isActivityRunning = false
-        Jzvd.releaseAllVideos()
     }
 
     //禁止app字体大小跟随系统字体大小调节
@@ -115,7 +109,7 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
         getDeviceDensity()
         INSTANCE.addActivity(this)
         if (isNeedSetTheme) ThemeUtil.setTheme(this)
-        oldTheme = ThemeUtil.getTheme()
+        oldTheme = ThemeUtil.getRawTheme()
         if (isNeedImmersionBar) {
             refreshStatusBarColor()
         }
@@ -137,8 +131,8 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
     }
 
     fun refreshUIIfNeed() {
-        if (TextUtils.equals(oldTheme, ThemeUtil.getTheme()) &&
-            ThemeUtil.THEME_CUSTOM != ThemeUtil.getTheme() &&
+        if (TextUtils.equals(oldTheme, ThemeUtil.getRawTheme()) &&
+            ThemeUtil.THEME_CUSTOM != ThemeUtil.getRawTheme() &&
             !ThemeUtil.isTranslucentTheme()
         ) {
             return
@@ -154,10 +148,8 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
         isActivityRunning = true
         if (appPreferences.followSystemNight) {
             if (App.isSystemNight && !ThemeUtil.isNightMode()) {
-                dataStore.putBoolean(SP_SHOULD_SHOW_SNACKBAR, true)
                 ThemeUtil.switchToNightMode(this, false)
             } else if (!App.isSystemNight && ThemeUtil.isNightMode()) {
-                dataStore.putBoolean(SP_SHOULD_SHOW_SNACKBAR, true)
                 ThemeUtil.switchFromNightMode(this, false)
             }
         }
@@ -180,10 +172,6 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
                 if (!HandleBackUtil.handleBackPress(this)) {
                     finish()
                 }
-                return true
-            }
-            R.id.menu_exit -> {
-                finish()
                 return true
             }
         }
@@ -299,7 +287,7 @@ abstract class BaseActivity : AppCompatActivity(), ExtraRefreshable, CoroutineSc
         if (isNeedImmersionBar) {
             refreshStatusBarColor()
         }
-        oldTheme = ThemeUtil.getTheme()
+        oldTheme = ThemeUtil.getRawTheme()
     }
 
     private fun recreateIfNeed(): Boolean {

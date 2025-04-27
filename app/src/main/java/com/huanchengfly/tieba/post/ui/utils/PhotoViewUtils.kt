@@ -1,15 +1,14 @@
 package com.huanchengfly.tieba.post.ui.utils
 
-import androidx.compose.runtime.Stable
 import com.huanchengfly.tieba.post.api.models.protos.Media
 import com.huanchengfly.tieba.post.api.models.protos.Post
 import com.huanchengfly.tieba.post.api.models.protos.ThreadInfo
-import com.huanchengfly.tieba.post.arch.ImmutableHolder
-import com.huanchengfly.tieba.post.arch.wrapImmutable
-import com.huanchengfly.tieba.post.models.protos.LoadPicPageData
-import com.huanchengfly.tieba.post.models.protos.PhotoViewData
-import com.huanchengfly.tieba.post.models.protos.PicItem
+import com.huanchengfly.tieba.post.models.LoadPicPageData
+import com.huanchengfly.tieba.post.models.PhotoViewData
+import com.huanchengfly.tieba.post.models.PicItem
 import com.huanchengfly.tieba.post.utils.ImageUtil
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 fun getPhotoViewData(
     post: Post,
@@ -22,7 +21,7 @@ fun getPhotoViewData(
 ): PhotoViewData? {
     if (post.from_forum == null) return null
     return PhotoViewData(
-        data_ = LoadPicPageData(
+        data = LoadPicPageData(
             forumId = post.from_forum.id,
             forumName = post.from_forum.name,
             threadId = post.tid,
@@ -33,27 +32,19 @@ fun getPhotoViewData(
             seeLz = seeLz,
             originUrl = originUrl,
         ),
-        picItems = listOf(
+        picItems = persistentListOf(
             PicItem(
                 picId = picId,
                 picIndex = 1,
                 url = picUrl,
                 originUrl = originUrl,
                 showOriginBtn = showOriginBtn,
-                originSize = originSize
+                originSize = originSize,
+                postId = post.id
             )
         )
     )
 }
-
-@Stable
-fun getImmutablePhotoViewData(
-    threadInfo: ThreadInfo,
-    index: Int
-): ImmutableHolder<PhotoViewData> {
-    return wrapImmutable(getPhotoViewData(threadInfo, index))
-}
-
 
 fun getPhotoViewData(
     threadInfo: ThreadInfo,
@@ -77,7 +68,7 @@ fun getPhotoViewData(
 ): PhotoViewData {
     val media = medias[index]
     return PhotoViewData(
-        data_ = LoadPicPageData(
+        data = LoadPicPageData(
             forumId = forumId,
             forumName = forumName,
             threadId = threadId,
@@ -95,9 +86,10 @@ fun getPhotoViewData(
                 url = mediaItem.bigPic,
                 originUrl = mediaItem.originPic,
                 showOriginBtn = mediaItem.showOriginalBtn == 1,
-                originSize = mediaItem.originSize
+                originSize = mediaItem.originSize,
+                postId = mediaItem.postId
             )
-        },
+        }.toImmutableList(),
         index = index
     )
 }

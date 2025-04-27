@@ -226,7 +226,7 @@ private fun getLightDynamicColor(tonalPalette: TonalPalette): ExtendedColors {
         onBottomBarSurface = tonalPalette.neutralVariant30,
         text = tonalPalette.neutralVariant10,
         textSecondary = tonalPalette.neutralVariant40,
-        textDisabled = tonalPalette.neutralVariant100,
+        textDisabled = tonalPalette.neutralVariant70,
         background = tonalPalette.neutralVariant99,
         chip = tonalPalette.neutralVariant95,
         onChip = tonalPalette.neutralVariant40,
@@ -291,7 +291,7 @@ private fun getBlackDarkDynamicColor(tonalPalette: TonalPalette): ExtendedColors
         onTopBarActive = tonalPalette.neutralVariant100,
         topBarSurface = tonalPalette.neutralVariant10,
         onTopBarSurface = tonalPalette.neutralVariant70,
-        bottomBar = tonalPalette.neutralVariant10,
+        bottomBar = tonalPalette.neutralVariant0,
         bottomBarSurface = tonalPalette.neutralVariant10,
         onBottomBarSurface = tonalPalette.neutralVariant70,
         text = tonalPalette.neutralVariant90,
@@ -314,7 +314,7 @@ private fun getBlackDarkDynamicColor(tonalPalette: TonalPalette): ExtendedColors
 @Composable
 private fun getThemeColorForTheme(theme: String): ExtendedColors {
     val context = LocalContext.current
-    val nowTheme = ThemeUtil.getThemeTranslucent(theme)
+    val nowTheme = ThemeUtil.getCurrentTheme(theme)
     val textColor =
         Color(App.ThemeDelegate.getColorByAttr(context, R.attr.colorText, nowTheme))
     val bottomBarColor =
